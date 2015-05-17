@@ -13,7 +13,7 @@ shift 3
 
 if [ $# -eq 0 ]
 then
-    set -- "GET /"
+    set -- GET /
 fi
 
 HTTPIE_BASEURL=${SCHEME:-http}://${BASE} http --session-read-only=${SESSION} "$@"
