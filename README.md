@@ -25,7 +25,7 @@ I recommend installing it in a virtual environment:
 To make the `http` program available you could create a symlink in a folder
 somewhere on your `$PATH`:
 
-    $ ln -s //var/venvs/consume/bin/http /usr/bin/http
+    $ ln -s /var/venvs/consume/bin/http /usr/bin/http
 
 **END OF IMPORTANT NOTE**
 
