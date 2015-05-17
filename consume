@@ -1,0 +1,14 @@
+#!/bin/bash
+
+function jsonval {
+    temp=`cat $1 | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2 | cut -d":" -f2| sed -e 's/^ *//g' -e 's/ *$//g'`
+    echo ${temp##*|}
+}
+
+BASE=$1
+SESSION=$3
+SCHEME=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json scheme`
+
+shift 3
+
+HTTPIE_BASEURL=${SCHEME:-http}://${BASE} http --session-read-only=${SESSION} "$@"
