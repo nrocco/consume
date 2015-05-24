@@ -8,6 +8,7 @@ function jsonval {
 BASE=$1
 SESSION=$3
 SCHEME=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json scheme`
+DEFAULT_OPTIONS=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json default_options`
 
 shift 3
 
@@ -16,4 +17,4 @@ then
     set -- GET /
 fi
 
-HTTPIE_BASEURL=${SCHEME:-http}://${BASE} http --session-read-only=${SESSION} "$@"
+HTTPIE_BASEURL=${SCHEME:-http}://${BASE} http --session-read-only=${SESSION} $DEFAULT_OPTIONS "$@"
