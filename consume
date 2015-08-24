@@ -7,6 +7,13 @@ function jsonval {
 
 BASE=$1
 SESSION=$3
+
+if [ ! -r "~/.httpie/sessions/$BASE/$SESSION.json" ]
+then
+    echo "ERROR: ~/.httpie/sessions/$BASE/$SESSION.json does not exist."
+    exit 1
+fi
+
 SCHEME=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json scheme`
 DEFAULT_OPTIONS=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json default_options`
 
