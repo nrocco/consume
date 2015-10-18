@@ -8,7 +8,7 @@ function jsonval {
 BASE=$1
 SESSION=$3
 
-if [ ! -r "~/.httpie/sessions/$BASE/$SESSION.json" ]
+if [ ! -r "$HOME/.httpie/sessions/$BASE/$SESSION.json" ]
 then
     echo "ERROR: ~/.httpie/sessions/$BASE/$SESSION.json does not exist."
     exit 1
