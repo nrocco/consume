@@ -16,6 +16,7 @@ fi
 
 SCHEME=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json scheme`
 DEFAULT_OPTIONS=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json default_options`
+BASE_URI=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json base_uri`
 
 shift 3
 
@@ -24,4 +25,4 @@ then
     set -- GET /
 fi
 
-HTTPIE_BASEURL=${SCHEME:-http}://${BASE} http --session-read-only=${SESSION} $DEFAULT_OPTIONS "$@"
+HTTPIE_BASEURL=${SCHEME:-http}://${BASE//_/:}${BASE_URI} http --session-read-only=${SESSION} $DEFAULT_OPTIONS "$@"
