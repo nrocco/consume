@@ -5,7 +5,7 @@ _base_urls() {
 }
 
 _sessions() {
-    ls ~/.httpie/sessions/$line[1] | sed 's/.json//'
+    ls ~/.httpie/sessions/$line[1] | grep '.json' | sed 's/.json//'
 }
 
 arguments=(
