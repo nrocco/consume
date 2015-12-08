@@ -1,22 +1,38 @@
 #!/bin/bash
+IS_ENCRYPTED=${CONSUME_ENCRYPTED}
+BASEDIR=${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}
+FIFO=${CONSUME_FIFO:-/tmp/consume-fifo}
+BASEURL="$1"
+SESSION="$3"
+
+if [[ "yes" == "$IS_ENCRYPTED" ]]
+then
+    SESSION_FILE="$BASEDIR/$BASEURL/$SESSION.json.gpg"
+else
+    SESSION_FILE="$BASEDIR/$BASEURL/$SESSION.json"
+fi
 
 function jsonval {
-    temp=`cat $1 | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2 | cut -d":" -f2| sed -e 's/^ *//g' -e 's/ *$//g'`
+    temp=`echo "$1" | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2 | cut -d":" -f2| sed -e 's/^ *//g' -e 's/ *$//g'`
     echo ${temp##*|}
 }
 
-BASE=$1
-SESSION=$3
-
-if [ ! -r "$HOME/.httpie/sessions/$BASE/$SESSION.json" ]
+if [ ! -r "$SESSION_FILE" ]
 then
-    echo "ERROR: ~/.httpie/sessions/$BASE/$SESSION.json does not exist."
+    echo "ERROR: $SESSION_FILE does not exist."
     exit 1
 fi
 
-SCHEME=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json scheme`
-DEFAULT_OPTIONS=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json default_options`
-BASE_URI=`jsonval ~/.httpie/sessions/$BASE/$SESSION.json base_uri`
+if [[ "yes" == "$IS_ENCRYPTED" ]]
+then
+    SESSION_JSON=$(gpg -q --no-tty --decrypt "$SESSION_FILE")
+else
+    SESSION_JSON=$(cat "$SESSION_FILE")
+fi
+
+SCHEME=`jsonval "$SESSION_JSON" scheme`
+DEFAULT_OPTIONS=`jsonval "$SESSION_JSON" default_options`
+BASE_URI=`jsonval "$SESSION_JSON" base_uri`
 
 shift 3
 
@@ -25,4 +41,10 @@ then
     set -- GET /
 fi
 
-HTTPIE_BASEURL=${SCHEME:-http}://${BASE//_/:}${BASE_URI} http --session-read-only=${SESSION} $DEFAULT_OPTIONS "$@"
+if [ ! -p "$FIFO" ]
+then
+    mkfifo "$FIFO"
+fi
+
+echo "$SESSION_JSON" > "$FIFO" &
+HTTPIE_BASEURL=${SCHEME:-http}://${BASEURL//_/:}${BASE_URI} http --session-read-only="${FIFO}" $DEFAULT_OPTIONS "$@"
