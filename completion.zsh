@@ -5,8 +5,7 @@ _base_urls() {
 }
 
 _sessions() {
-    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json.gpg' | sed 's/.json.gpg//'
-    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json' | sed 's/.json//'
+    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json' | sed -e 's/.json.gpg$//' -e 's/.json$//'
 }
 
 arguments=(
