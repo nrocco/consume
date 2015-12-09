@@ -1,33 +1,29 @@
 #!/bin/bash
-IS_ENCRYPTED=${CONSUME_ENCRYPTED}
 BASEDIR=${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}
 FIFO=${CONSUME_FIFO:-/tmp/consume-fifo}
 BASEURL="$1"
 SESSION="$3"
-
-if [[ "yes" == "$IS_ENCRYPTED" ]]
-then
-    SESSION_FILE="$BASEDIR/$BASEURL/$SESSION.json.gpg"
-else
-    SESSION_FILE="$BASEDIR/$BASEURL/$SESSION.json"
-fi
 
 function jsonval {
     temp=`echo "$1" | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2 | cut -d":" -f2| sed -e 's/^ *//g' -e 's/ *$//g'`
     echo ${temp##*|}
 }
 
-if [ ! -r "$SESSION_FILE" ]
+if [[ -z "$BASEURL" || -z "$SESSION" ]]
 then
-    echo "ERROR: $SESSION_FILE does not exist."
+    echo "Usage: $(basename $0) [baseurl] as [session] [...httpie args]"
     exit 1
 fi
 
-if [[ "yes" == "$IS_ENCRYPTED" ]]
+if [ -r "$BASEDIR/$BASEURL/$SESSION.json.gpg" ]
 then
-    SESSION_JSON=$(gpg -q --no-tty --decrypt "$SESSION_FILE")
+    SESSION_JSON=$(gpg -q --no-tty --decrypt "$BASEDIR/$BASEURL/$SESSION.json.gpg")
+elif [ -r "$BASEDIR/$BASEURL/$SESSION.json" ]
+then
+    SESSION_JSON=$(cat "$BASEDIR/$BASEURL/$SESSION.json")
 else
-    SESSION_JSON=$(cat "$SESSION_FILE")
+    echo "ERROR: No session file $SESSION found for $BASEURL"
+    exit 1
 fi
 
 SCHEME=`jsonval "$SESSION_JSON" scheme`

@@ -5,12 +5,8 @@ _base_urls() {
 }
 
 _sessions() {
-    if [[ "yes" == "${CONSUME_ENCRYPTED}" ]]
-    then
-        ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json.gpg' | sed 's/.json.gpg//'
-    else
-        ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json' | sed 's/.json//'
-    fi
+    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json.gpg' | sed 's/.json.gpg//'
+    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json' | sed 's/.json//'
 }
 
 arguments=(
