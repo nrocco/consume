@@ -37,10 +37,21 @@ then
     set -- GET /
 fi
 
+arguments=()
+for var in "$@"
+do
+    if [[ "$var" == /* ]]
+    then
+        arguments+=("${SCHEME:-http}://${BASEURL//_/:}${BASE_URI}$var")
+    else
+        arguments+=("$var")
+    fi
+done
+
 if [ ! -p "$FIFO" ]
 then
     mkfifo "$FIFO"
 fi
 
 echo "$SESSION_JSON" > "$FIFO" &
-HTTPIE_BASEURL=${SCHEME:-http}://${BASEURL//_/:}${BASE_URI} http --session-read-only="${FIFO}" $DEFAULT_OPTIONS "$@"
+http --session-read-only="${FIFO}" $DEFAULT_OPTIONS "${arguments[@]}"
