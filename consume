@@ -1,5 +1,5 @@
 #!/bin/bash
-BASEDIR=${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}
+BASEDIR=${CONSUME_BASEDIR:-${HOME}/.config/httpie/sessions}
 FIFO=${CONSUME_FIFO:-/tmp/consume-fifo}
 BASEURL="$1"
 SESSION="$3"

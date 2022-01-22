@@ -56,7 +56,7 @@ Which results in a `GET` request to the server, but that's all default
 The above example of using `consume` makes `HTTPie` read the session stored
 in:
 
-    ~/.httpie/sessions/my-api.example.org/tester.json
+    ~/.config/httpie/sessions/my-api.example.org/tester.json
 
 
 The session `tester.json` could have all kinds of headers (basic

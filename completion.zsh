@@ -1,11 +1,11 @@
 #compdef consume
 
 _base_urls() {
-    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}
+    ls ${CONSUME_BASEDIR:-${HOME}/.config/httpie/sessions}
 }
 
 _sessions() {
-    ls ${CONSUME_BASEDIR:-${HOME}/.httpie/sessions}/$line[1] | grep '.json' | sed -e 's/.json.gpg$//' -e 's/.json$//'
+    ls ${CONSUME_BASEDIR:-${HOME}/.config/httpie/sessions}/$line[1] | grep '.json' | sed -e 's/.json.gpg$//' -e 's/.json$//'
 }
 
 arguments=(
