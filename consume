@@ -1,57 +1,48 @@
-#!/bin/bash
-BASEDIR=${CONSUME_BASEDIR:-${HOME}/.config/httpie/sessions}
-FIFO=${CONSUME_FIFO:-/tmp/consume-fifo}
-BASEURL="$1"
-SESSION="$3"
+#!/usr/bin/env python3
+import json
+import os
+import subprocess
+import sys
+import tempfile
 
-function jsonval {
-    temp=`echo "$1" | sed 's/\\\\\//\//g' | sed 's/[{}]//g' | awk -v k="text" '{n=split($0,a,","); for (i=1; i<=n; i++) print a[i]}' | sed 's/\"\:\"/\|/g' | sed 's/[\,]/ /g' | sed 's/\"//g' | grep -w $2 | cut -d":" -f2| sed -e 's/^ *//g' -e 's/ *$//g'`
-    echo ${temp##*|}
-}
 
-if [[ -z "$BASEURL" || -z "$SESSION" ]]
-then
-    echo "Usage: $(basename $0) [baseurl] as [session] [...httpie args]"
-    exit 1
-fi
+def main():
+    if len(sys.argv) < 5:
+        sys.stderr.write(f"usage: {os.path.basename(sys.argv[0])} [host] as [session] [...httpie args]\n")
+        sys.exit(1)
+    host = sys.argv[1]
+    session_name = sys.argv[3]
+    base_dir = os.path.expanduser(os.environ.get("CONSUME_BASEDIR", "~/.config/httpie/sessions"))
+    session_file = os.path.join(base_dir, host, f"{session_name}.json")
+    if os.path.exists(f"{session_file}.gpg"):
+        result = subprocess.run(["gpg", "-q", "--no-tty", "--decrypt", f"{session_file}.gpg"], stdout=subprocess.PIPE)
+        session = json.loads(result.stdout)
+    elif os.path.exists(session_file):
+        with open(session_file, "r") as file:
+            session = json.load(file)
+    else:
+        sys.stderr.write(f"error: {session_file} does not exist\n")
+        sys.exit(1)
+    default_options = session.get("consume", {}).get("default_options", [])
+    scheme = session.get("consume", {}).get("scheme", "http")
+    host = session.get("consume", {}).get("host", host).rstrip("/")
+    path = session.get("consume", {}).get("path", "").strip("/")
+    session.pop('consume', None)
+    tmp_session_file = tempfile.mktemp()
+    with open(tmp_session_file, "w") as file:
+        json.dump(session, file)
+    try:
+        args = [os.environ.get("CONSUME_HTTPIE", "http"), "--session-read-only", tmp_session_file] + default_options
+        for arg in sys.argv[4:]:
+            if arg.startswith("/"):
+                args.append(f"{scheme}://{host}/{path}{arg.lstrip('/')}")
+            else:
+                args.append(arg)
+        result = subprocess.run(args)
+    finally:
+        os.unlink(tmp_session_file)
+    sys.exit(result.returncode)
 
-if [ -r "$BASEDIR/$BASEURL/$SESSION.json.gpg" ]
-then
-    SESSION_JSON=$(gpg -q --no-tty --decrypt "$BASEDIR/$BASEURL/$SESSION.json.gpg")
-elif [ -r "$BASEDIR/$BASEURL/$SESSION.json" ]
-then
-    SESSION_JSON=$(cat "$BASEDIR/$BASEURL/$SESSION.json")
-else
-    echo "ERROR: No session file $SESSION found for $BASEURL"
-    exit 1
-fi
 
-SCHEME=`jsonval "$SESSION_JSON" scheme`
-DEFAULT_OPTIONS=`jsonval "$SESSION_JSON" default_options`
-BASE_URI=`jsonval "$SESSION_JSON" base_uri`
-
-shift 3
-
-if [ $# -eq 0 ]
-then
-    set -- GET /
-fi
-
-arguments=()
-for var in "$@"
-do
-    if [[ "$var" == /* ]]
-    then
-        arguments+=("${SCHEME:-http}://${BASEURL//_/:}${BASE_URI}$var")
-    else
-        arguments+=("$var")
-    fi
-done
-
-if [ ! -p "$FIFO" ]
-then
-    mkfifo "$FIFO"
-fi
-
-echo "$SESSION_JSON" > "$FIFO" &
-http --session-read-only="${FIFO}" $DEFAULT_OPTIONS "${arguments[@]}"
+if __name__ == '__main__':
+    main()
